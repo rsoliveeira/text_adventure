@@ -2,41 +2,115 @@ package repository;
 
 import model.Cena;
 import model.Item;
+import util.Mysql;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ItemDAO {
-    public static Item findItemById(Integer id) {
-        return new Item();
+
+    public static List<Item> findItensByIds(int... ids) throws SQLException {
+        Connection connection = Mysql.getConnection();
+        StringBuilder sql = new StringBuilder("SELECT * FROM itens WHERE id_item IN (");
+
+        for (int i = 0; i < ids.length; i++) {
+            sql.append("?");
+            if (i < ids.length - 1) {
+                sql.append(", ");
+            }
+        }
+        sql.append(");");
+
+        PreparedStatement ps = connection.prepareStatement(sql.toString());
+        for (int i = 0; i < ids.length; i++) {
+            ps.setInt(i + 1, ids[i]);
+        }
+
+        ResultSet resultSet = ps.executeQuery();
+        List<Item> itens = new ArrayList<>();
+
+        while (resultSet.next()) {
+            int itemId = resultSet.getInt("id_item");
+            String nome = resultSet.getString("nome");
+            String descricao = resultSet.getString("descricao");
+            Item item = new Item(itemId, nome, descricao);
+            itens.add(item);
+        }
+
+        resultSet.close();
+        ps.close();
+        connection.close();
+
+        return itens;
     }
+
+    public static List<Item> findAll() throws SQLException {
+        Connection connection = Mysql.getConnection();
+        String sql = "SELECT * FROM itens";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ResultSet resultSet = ps.executeQuery();
+
+        List<Item> itens = new ArrayList<>();
+        while (resultSet.next()) {
+            int itemId = resultSet.getInt("id_item");
+            String nome = resultSet.getString("nome");
+            String descricao = resultSet.getString("descricao");
+            Item item = new Item(itemId, nome, descricao);
+            itens.add(item);
+        }
+
+        resultSet.close();
+        ps.close();
+        connection.close();
+
+        return itens;
+    }
+
+    public static Item findItemById(int id) throws SQLException {
+        Connection connection = Mysql.getConnection();
+        String sql = "SELECT * FROM itens WHERE id_item = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, id);
+        ResultSet resultSet = ps.executeQuery();
+
+        Item item = null;
+        if (resultSet.next()) {
+            int itemId = resultSet.getInt("id_item");
+            String nome = resultSet.getString("nome");
+            String descricao = resultSet.getString("descricao");
+            item = new Item(itemId, nome, descricao);
+        }
+
+        resultSet.close();
+        ps.close();
+        connection.close();
+
+        return item;
+    }
+
 
     public static List<Item> findItensByScene(Cena cena) throws SQLException {
         Connection connection = Mysql.getConnection();
-        String sql = "SELECT * FROM itens WHERE id_cena = ?;"; // Alterei para filtrar por id_cena
+        String sql = "SELECT * FROM itens WHERE id_cena = ?";
         PreparedStatement ps = connection.prepareStatement(sql);
         ps.setInt(1, cena.getIdCena());
         ResultSet resultSet = ps.executeQuery();
 
         List<Item> itens = new ArrayList<>();
         while (resultSet.next()) {
-            Item item = new Item();
-            item.setIdItem(resultSet.getInt("id_item"));
-            item.setNome(resultSet.getString("nome"));
-            item.setDescricao(resultSet.getString("descricao"));  // Preenchendo a descrição do item
-            // preencher o restante das propriedades
-
-            int idCena = resultSet.getInt("id_cena");
-            Cena cenaAtual = CenaDAO.findCenaById(idCena);
-
-            item.setCena(cenaAtual);
+            int itemId = resultSet.getInt("id_item");
+            String nome = resultSet.getString("nome");
+            String descricao = resultSet.getString("descricao");
+            Item item = new Item(itemId, nome, descricao);
             itens.add(item);
         }
 
+        resultSet.close();
+        ps.close();
+        connection.close();
+
         return itens;
     }
+
 }

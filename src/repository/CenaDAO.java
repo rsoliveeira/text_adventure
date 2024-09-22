@@ -1,58 +1,56 @@
 package repository;
 
 import model.Cena;
+import util.Mysql;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CenaDAO {
 
-    // Implementação do método findCenaById que recebe um id
     public static Cena findCenaById(int id) throws SQLException {
         Connection conn = Mysql.getConnection();
         String sql = "SELECT * FROM cenas WHERE id_cena = ?";
         PreparedStatement stmt = conn.prepareStatement(sql);
         stmt.setInt(1, id);
         ResultSet rs = stmt.executeQuery();
-        Cena cena = new Cena();
+        Cena cena = null;
 
         if (rs.next()) {
-            cena.setIdCena(
-                    rs.getInt("id_cena")
-            );
+            cena = new Cena();
+            cena.setIdCena(rs.getInt("id_cena"));
+            cena.setTitulo(rs.getString("titulo"));
             cena.setDescricao(rs.getString("descricao"));
         }
+
+        rs.close();
+        stmt.close();
+        conn.close();
+
         return cena;
     }
 
-    public static void insertCena(Cena cena) throws SQLException {
-        Connection connection = Mysql.getConnection();
-        String insert = "INSERT INTO cenas(descricao) VALUES (?);";
-        PreparedStatement ps = connection.prepareStatement(insert);
-        ps.setString(1, cena.getDescricao());
-        ps.execute();
-    }
-
     public static List<Cena> findAll() throws SQLException {
-        Connection connection = Mysql.getConnection();
-        String sql = "select * from cenas;";
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ResultSet resultSet = ps.executeQuery();
+        Connection conn = Mysql.getConnection();
+        String sql = "SELECT * FROM cenas";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery();
 
         List<Cena> cenas = new ArrayList<>();
-        while (resultSet.next()) {
+        while (rs.next()) {
             Cena cena = new Cena();
-            cena.setIdCena(resultSet.getInt("id_cena"));
-            cena.setDescricao(resultSet.getString("descricao"));
+            cena.setIdCena(rs.getInt("id_cena"));
+            cena.setTitulo(rs.getString("titulo"));
+            cena.setDescricao(rs.getString("descricao"));
 
             cenas.add(cena);
         }
+
+        rs.close();
+        ps.close();
+        conn.close();
+
         return cenas;
     }
-
-
 }
