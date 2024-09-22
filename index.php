@@ -1,82 +1,49 @@
-<?php
-require_once 'backend.php';  // Inclui o arquivo com a função sendToJavaServer
-
-session_start();
-
-if (!isset($_SESSION['cena_atual'])) {
-    $_SESSION['cena_atual'] = 1; // Começa na cena 1
-}
-
-// Verifica se um comando foi enviado
-if (isset($_POST['command'])) {
-    $command = strtolower(trim($_POST['command']));
-
-    // Processa o comando enviado
-    switch ($command) {
-        case 'parede de pedra':
-            $response = sendToJavaServer($command);
-            echo nl2br($response);  // Exibe a resposta do servidor Java
-            break;
-
-        case 'estátua antiga':
-            $response = sendToJavaServer($command);
-            echo nl2br($response);  // Exibe a resposta do servidor Java
-            break;
-
-        default:
-            echo "INVALID COMMAND";
-            break;
-    }
-} else {
-    echo "Nenhum comando enviado.";
-}
-?>
-
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Text Adventure</title>
-    <style>
-        body {
-            background-color: #000;
-            color: #00FF00;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 20px;
-        }
-        #console {
-            border: 1px solid #00FF00;
-            padding: 10px;
-            margin-bottom: 20px;
-            height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        #inputLine {
-            color: #00FF00;
-            display: flex;
-        }
-        #command {
-            background-color: #000;
-            color: #00FF00;
-            border: none;
-            outline: none;
-            flex: 1;
-            font-family: inherit;
-            font-size: inherit;
-        }
-        #prompt {
-            padding-right: 10px;
-        }
-    </style>
 </head>
 <body>
-    <h1>Bem-vindo ao Jornada digital: em busca do Artefado Perdido</h1>
+    <h1>Text Adventure - Cenas e Itens</h1>
 
-    <form method="POST" action="">
-        <label for="command">Digite um comando:</label><br>
-        <input type="text" id="command" name="command" required><br><br>
-        <input type="submit" value="Enviar Comando">
-    </form>
+    <!-- Exibir as Cenas -->
+    <h2>Cenas</h2>
+    <?php
+    $cenasApiUrl = "http://localhost:8080/api/cenas";
+    $cenas = file_get_contents($cenasApiUrl);
+    $cenasArray = json_decode($cenas, true);
+
+    if (!empty($cenasArray)) {
+        foreach ($cenasArray as $cena) {
+            echo "<div>";
+            echo "<h3>" . $cena['titulo'] . "</h3>";
+            echo "<p>" . $cena['descricao'] . "</p>";
+            echo "</div>";
+        }
+    } else {
+        echo "<p>Nenhuma cena encontrada.</p>";
+    }
+    ?>
+
+    <!-- Exibir os Itens -->
+    <h2>Itens</h2>
+    <?php
+    $itensApiUrl = "http://localhost:8080/api/items";
+    $itens = file_get_contents($itensApiUrl);
+    $itensArray = json_decode($itens, true);
+
+    if (!empty($itensArray)) {
+        foreach ($itensArray as $item) {
+            echo "<div>";
+            echo "<h3>" . $item['nome'] . "</h3>";
+            echo "<p>" . $item['descricao'] . "</p>";
+            echo "</div>";
+        }
+    } else {
+        echo "<p>Nenhum item encontrado.</p>";
+    }
+    ?>
 </body>
 </html>
