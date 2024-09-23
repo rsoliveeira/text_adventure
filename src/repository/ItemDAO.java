@@ -112,29 +112,25 @@ public class ItemDAO {
         return item;
     }
 
-    public static Item findItemByNameAndScene(String nome, int idCena) throws SQLException {
-        Connection connection = Mysql.getConnection();
+    public static Item findItemByNameAndScene(String itemName, int sceneId) throws SQLException {
+        Connection conn = Mysql.getConnection();
         String sql = "SELECT * FROM itens WHERE nome = ? AND id_cena = ?";
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setString(1, nome);
-        ps.setInt(2, idCena);
-        ResultSet resultSet = ps.executeQuery();
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, itemName);
+        ps.setInt(2, sceneId);
+        ResultSet rs = ps.executeQuery();
 
         Item item = null;
-        if (resultSet.next()) {
-            int itemId = resultSet.getInt("id_item");
-            String descricao = resultSet.getString("descricao");
-            item = new Item(itemId, nome, descricao);
+        if (rs.next()) {
+            item = new Item(rs.getInt("id_item"), rs.getString("nome"), rs.getString("descricao"));
         }
 
-        resultSet.close();
+        rs.close();
         ps.close();
-        connection.close();
+        conn.close();
 
         return item;
     }
-
-
 
     public static List<Item> findItensByScene(Cena cena) throws SQLException {
         Connection connection = Mysql.getConnection();
