@@ -45,6 +45,29 @@ public class ItemDAO {
         return itens;
     }
 
+    public static Item findItemByName(String name) throws SQLException {
+        Connection connection = Mysql.getConnection();
+        String sql = "SELECT * FROM itens WHERE nome = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setString(1, name);
+        ResultSet resultSet = ps.executeQuery();
+
+        Item item = null;
+        if (resultSet.next()) {
+            int itemId = resultSet.getInt("id_item");
+            String nome = resultSet.getString("nome");
+            String descricao = resultSet.getString("descricao");
+            item = new Item(itemId, nome, descricao);
+        }
+
+        resultSet.close();
+        ps.close();
+        connection.close();
+
+        return item;
+    }
+
+
     public static List<Item> findAll() throws SQLException {
         Connection connection = Mysql.getConnection();
         String sql = "SELECT * FROM itens";
@@ -88,6 +111,29 @@ public class ItemDAO {
 
         return item;
     }
+
+    public static Item findItemByNameAndScene(String nome, int idCena) throws SQLException {
+        Connection connection = Mysql.getConnection();
+        String sql = "SELECT * FROM itens WHERE nome = ? AND id_cena = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setString(1, nome);
+        ps.setInt(2, idCena);
+        ResultSet resultSet = ps.executeQuery();
+
+        Item item = null;
+        if (resultSet.next()) {
+            int itemId = resultSet.getInt("id_item");
+            String descricao = resultSet.getString("descricao");
+            item = new Item(itemId, nome, descricao);
+        }
+
+        resultSet.close();
+        ps.close();
+        connection.close();
+
+        return item;
+    }
+
 
 
     public static List<Item> findItensByScene(Cena cena) throws SQLException {
