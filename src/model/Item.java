@@ -4,15 +4,24 @@ public class Item {
     private int id;
     private String nome;
     private String descricao;
+    private int quantidade;  // Adicionado
 
-    // Construtor
+    // Construtor com quantidade
+    public Item(int id, String nome, String descricao, int quantidade) {
+        this.id = id;
+        this.nome = nome;
+        this.descricao = descricao;
+        this.quantidade = quantidade;
+    }
+
+    // Construtor sem quantidade, para quando a quantidade não for necessária
     public Item(int id, String nome, String descricao) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
     }
 
-    // Getters
+    // Getters e setters
     public int getId() {
         return id;
     }
@@ -25,47 +34,21 @@ public class Item {
         return descricao;
     }
 
-    // Setters (se precisar alterar os valores depois de criar o objeto)
-    public void setId(int id) {
-        this.id = id;
+    public int getQuantidade() {
+        return quantidade;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
     }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
-
-    // Sobrescrever o método toString para exibir os detalhes do Item
     @Override
     public String toString() {
         return "Item{" +
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", descricao='" + descricao + '\'' +
+                ", quantidade=" + quantidade +
                 '}';
-    }
-
-    // Sobrescrever equals() e hashCode() para comparar objetos corretamente
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Item item = (Item) o;
-
-        if (id != item.id) return false;
-        if (!nome.equals(item.nome)) return false;
-        return descricao.equals(item.descricao);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = id;
-        result = 31 * result + nome.hashCode();
-        result = 31 * result + descricao.hashCode();
-        return result;
     }
 }
