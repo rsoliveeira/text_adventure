@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import model.Cena;
 import model.Item;
 import repository.CenaDAO;
+import repository.InventoryDAO;
 import repository.ItemDAO;
 
 import static spark.Spark.*;
@@ -26,7 +27,6 @@ public class Main {
         port(8080); // Define a porta do servidor
         Gson gson = new Gson();
 
-        // Habilitar CORS para todas as origens
         enableCORS("*", "*", "*");
 
         // Rota para buscar a cena específica por ID
@@ -56,10 +56,12 @@ public class Main {
         // Rota para buscar item pelo nome e cena
         get("/api/items", (req, res) -> {
             res.type("application/json");
-            String nomeParam = req.queryParams("name");
+            String itemName = req.queryParams("name");
+            String sceneIdParam = req.queryParams("sceneId");
             try {
-                if (nomeParam != null) {
-                    Item item = ItemDAO.findItemByNameAndScene(nomeParam, 1); // Considerando cena 1
+                if (itemName != null && sceneIdParam != null) {
+                    int sceneId = Integer.parseInt(sceneIdParam);
+                    Item item = ItemDAO.findItemByNameAndScene(itemName, sceneId);
                     if (item != null) {
                         return gson.toJson(item);
                     } else {
@@ -68,7 +70,75 @@ public class Main {
                     }
                 } else {
                     res.status(400);
-                    return "{\"message\":\"Nome do item não fornecido\"}";
+                    return "{\"message\":\"Parâmetros inválidos\"}";
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro no servidor\"}";
+            }
+        });
+
+        // Rota para adicionar item ao inventário
+        post("/api/inventory/add", (req, res) -> {
+            String itemName = req.queryParams("name");
+            try {
+                Item item = ItemDAO.findItemByName(itemName);
+                if (item != null) {
+                    boolean success = InventoryDAO.addItemToInventory(1, item.getId()); // Supondo id_jogador = 1
+                    if (success) {
+                        return "{\"message\":\"Item adicionado ao inventário\"}";
+                    } else {
+                        res.status(500);
+                        return "{\"message\":\"Erro ao adicionar item\"}";
+                    }
+                } else {
+                    res.status(404);
+                    return "{\"message\":\"Item não encontrado\"}";
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro no servidor\"}";
+            }
+        });
+
+        // Rota para verificar se o jogador tem o item no inventário
+        get("/api/inventory/check", (req, res) -> {
+            String itemName = req.queryParams("name");
+            try {
+                boolean hasItem = InventoryDAO.hasItemInInventory(1, itemName); // Supondo id_jogador = 1
+                if (hasItem) {
+                    return "{\"message\":\"Você tem " + itemName + " no inventário.\"}";
+                } else {
+                    return "{\"message\":\"Você não possui " + itemName + " no inventário.\"}";
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro no servidor\"}";
+            }
+        });
+
+        // Rota para buscar o inventário
+        get("/api/inventory/list", (req, res) -> {
+            res.type("application/json");
+            try {
+                // Substitui findInventoryByPlayer por getInventory
+                List<String> inventory = InventoryDAO.getInventory(1); // Supondo id_jogador = 1
+                return gson.toJson(inventory);
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro ao buscar inventário\"}";
+            }
+        });
+
+        // Rota para reiniciar o jogo e limpar o inventário
+        post("/api/inventory/reset", (req, res) -> {
+            try {
+                boolean success = InventoryDAO.clearInventory(1); // Limpa o inventário do jogador 1
+                if (success) {
+                    return "{\"message\":\"Inventário limpo\"}";
+                } else {
+                    res.status(500);
+                    return "{\"message\":\"Erro ao limpar inventário\"}";
                 }
             } catch (SQLException e) {
                 res.status(500);
