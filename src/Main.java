@@ -1,14 +1,19 @@
 import com.google.gson.Gson;
 import model.Cena;
 import model.Item;
+import model.ResponseMessage;
 import repository.CenaDAO;
 import repository.InventoryDAO;
 import repository.ItemDAO;
+import repository.SaveGameDAO;
+import repository.ActionDAO;
+import repository.ResponseDAO;
 
 import static spark.Spark.*;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
 
@@ -78,28 +83,25 @@ public class Main {
             }
         });
 
-        // Rota para adicionar item ao inventário
-        post("/api/inventory/add", (req, res) -> {
-            String itemName = req.queryParams("name");
+        post("/api/actions", (req, res) -> {
+            res.type("application/json");
+            String inventoryItem = req.queryParams("inventoryItem");
+            String sceneItem = req.queryParams("sceneItem");
+            int sceneId = Integer.parseInt(req.queryParams("sceneId"));
+
             try {
-                Item item = ItemDAO.findItemByName(itemName);
-                if (item != null) {
-                    boolean success = InventoryDAO.addItemToInventory(1, item.getId()); // Supondo id_jogador = 1
-                    if (success) {
-                        return "{\"message\":\"Item adicionado ao inventário\"}";
-                    } else {
-                        res.status(500);
-                        return "{\"message\":\"Erro ao adicionar item\"}";
-                    }
-                } else {
-                    res.status(404);
-                    return "{\"message\":\"Item não encontrado\"}";
-                }
+                // Processa a ação de usar o item
+                String actionResult = ActionDAO.executeUseAction(inventoryItem, sceneItem, sceneId, 1);  // playerId = 1
+                return gson.toJson(Map.of("message", actionResult));
             } catch (SQLException e) {
                 res.status(500);
-                return "{\"message\":\"Erro no servidor\"}";
+                return gson.toJson(Map.of("message", "Erro no servidor ao processar a ação."));
             }
         });
+
+
+
+
 
         // Rota para verificar se o jogador tem o item no inventário
         get("/api/inventory/check", (req, res) -> {
@@ -121,7 +123,6 @@ public class Main {
         get("/api/inventory/list", (req, res) -> {
             res.type("application/json");
             try {
-                // Substitui findInventoryByPlayer por getInventory
                 List<String> inventory = InventoryDAO.getInventory(1); // Supondo id_jogador = 1
                 return gson.toJson(inventory);
             } catch (SQLException e) {
@@ -130,19 +131,84 @@ public class Main {
             }
         });
 
-        // Rota para reiniciar o jogo e limpar o inventário
-        post("/api/inventory/reset", (req, res) -> {
+        // Rota para processar o comando "get"
+        post("/api/inventory/add", (req, res) -> {
+            res.type("application/json"); // Define o tipo de resposta como JSON
+
+            String itemName = req.queryParams("name");
             try {
-                boolean success = InventoryDAO.clearInventory(1); // Limpa o inventário do jogador 1
-                if (success) {
-                    return "{\"message\":\"Inventário limpo\"}";
+                Item item = ItemDAO.findItemByName(itemName); // Busca o item pelo nome no banco
+                if (item != null) {
+                    boolean success = InventoryDAO.addItemToInventory(1, item.getId()); // Adiciona ao inventário do jogador
+                    if (success) {
+                        return "{\"message\":\"Item " + itemName + " foi adicionado ao inventário.\"}";
+                    } else {
+                        res.status(500);
+                        return "{\"message\":\"Erro ao adicionar o item.\"}";
+                    }
                 } else {
-                    res.status(500);
-                    return "{\"message\":\"Erro ao limpar inventário\"}";
+                    res.status(404);
+                    return "{\"message\":\"Item não encontrado.\"}";
                 }
             } catch (SQLException e) {
                 res.status(500);
                 return "{\"message\":\"Erro no servidor\"}";
+            }
+        });
+
+
+        post("/api/inventory/reset", (req, res) -> {
+            res.type("application/json");
+            try {
+                boolean success = InventoryDAO.clearInventory(1); // Supondo playerId = 1
+                if (success) {
+                    return gson.toJson(new ResponseMessage("Inventário limpo e jogo reiniciado.")); // Resposta como JSON
+                } else {
+                    res.status(500);
+                    return gson.toJson(new ResponseMessage("Erro ao reiniciar o jogo.")); // Retorna JSON com a mensagem de erro
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return gson.toJson(new ResponseMessage("Erro no servidor ao reiniciar o jogo."));
+            }
+        });
+
+
+
+        // Rota para salvar o estado do jogo
+        post("/api/save", (req, res) -> {
+            int playerId = 1; // Supondo um jogador com ID 1
+            int currentScene = Integer.parseInt(req.queryParams("scene"));
+
+            try {
+                boolean success = SaveGameDAO.saveGame(playerId, currentScene);
+                if (success) {
+                    return "{\"message\":\"Jogo salvo com sucesso\"}";
+                } else {
+                    res.status(500);
+                    return "{\"message\":\"Falha ao salvar o jogo\"}";
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro no servidor ao salvar o jogo\"}";
+            }
+        });
+
+        // Rota para carregar o estado do jogo
+        get("/api/load", (req, res) -> {
+            int playerId = 1; // Supondo um jogador com ID 1
+
+            try {
+                int loadedScene = SaveGameDAO.loadGame(playerId);
+                if (loadedScene != -1) {
+                    return "{\"currentScene\": " + loadedScene + ", \"message\":\"Jogo carregado com sucesso\"}";
+                } else {
+                    res.status(404);
+                    return "{\"message\":\"Nenhum jogo salvo encontrado\"}";
+                }
+            } catch (SQLException e) {
+                res.status(500);
+                return "{\"message\":\"Erro no servidor ao carregar o jogo\"}";
             }
         });
     }

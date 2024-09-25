@@ -1,7 +1,9 @@
 package controller;
 
 import com.google.gson.Gson;
+import model.Item;
 import repository.InventoryDAO;
+import repository.ItemDAO;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -55,4 +57,39 @@ public class InventoryServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String itemName = request.getParameter("name");
+        int playerId = 1; // ID padrão do jogador
+        int currentSceneId = Integer.parseInt(request.getParameter("sceneId")); // Cena passada pela requisição
+
+        try {
+            // Verifica se o item é pegável na Cena 1
+            if (ItemDAO.isItemPegavel(itemName, currentSceneId)) {
+                Item item = ItemDAO.findItemByName(itemName);
+                if (item != null) {
+                    boolean success = InventoryDAO.addItemToInventory(playerId, item.getId());
+                    if (success) {
+                        response.getWriter().write("{\"message\":\"Você pegou o " + itemName + " e o adicionou ao seu inventário.\"}");
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        response.getWriter().write("{\"message\":\"Falha ao adicionar o item.\"}");
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.getWriter().write("{\"message\":\"Item não encontrado.\"}");
+                }
+            } else {
+                // Se não for pegável, retorna a resposta apropriada
+                response.getWriter().write("{\"message\":\"O item " + itemName + " não pode ser adicionado ao inventário.\"}");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
 }

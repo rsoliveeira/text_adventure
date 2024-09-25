@@ -155,4 +155,10 @@ public class ItemDAO {
         return itens;
     }
 
+    public static boolean isItemPegavel(String itemName, int sceneId) {
+        // Verifica se o item é "DIAMANTE" e se está na Cena 1
+        return itemName.equalsIgnoreCase("DIAMANTE") && sceneId == 1;
+    }
+
+
 }
